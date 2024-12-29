@@ -6,9 +6,11 @@ export const roomMappingPromise = new Promise<void>((resolve) => {
     roomMappingReady = resolve;
 });
 
+// Sets up a Socket.IO listener to receive room and device data from the server.
 export function setupListener(): void {
     const socket = io('http://localhost:3000');
 
+    // Listen for the 'setup' event to receive room and device data.
     socket.on('setup', (data: any[]) => {
         try {
             roomMapping = createRoomMapping(data);
@@ -19,15 +21,18 @@ export function setupListener(): void {
         }
     });
 
+    // Log a message when successfully connected to the Socket.IO server.
     socket.on('connect', () => {
         console.log('Connected to the Socket.IO server');
     });
     
+    // Log a message when disconnected from the Socket.IO server.
     socket.on('disconnect', () => {
         console.log('Disconnected to the Socket.IO server');
     });
 }
 
+// Creates a mapping of rooms to their respective devices based on the provided data.
 function createRoomMapping(data: any[]): Map<string, { title: string, type: string }[]> {
     const roomMapping = new Map<string, { title: string, type: string }[]>();
 
@@ -49,5 +54,5 @@ function createRoomMapping(data: any[]): Map<string, { title: string, type: stri
         }
     });
 
-    return roomMapping;
+    return roomMapping; // Return the completed room-to-devices map.
 }
