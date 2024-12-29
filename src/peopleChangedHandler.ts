@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { roomMapping } from './socket';
 
+// Generates a list of endpoint URLs based on the room mapping.
 function generateEndpoints(map: Map<string, { title: string, type: string }[]>): string[] {
     const endpoints: string[] = [];
     map.forEach((_, roomId) => {
@@ -12,7 +13,7 @@ function generateEndpoints(map: Map<string, { title: string, type: string }[]>):
     return endpoints;
 }
 
-
+// Subscribes to a specific event stream endpoint and handles incoming events.
 async function subscribeToEndpoint(url: string) {
     while (true) {
         try {
@@ -79,15 +80,18 @@ async function subscribeToEndpoint(url: string) {
     }
 }
 
+// Extracts the event name from the endpoint URL.
 function extractEventNameFromURL(url: string): string {
     const parts = url.split('/');
     return parts[parts.length - 1]; 
 }
 
+// Delays the execution for a specified number of milliseconds.
 function delay(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// Turns a device off if it is currently on.
 async function turnThingOn(title : string) : Promise<void>{
     const isOnUrl = `http://localhost:8081/${title.toLowerCase()}/properties/isOn`;
     const toggleUrl = `http://localhost:8081/${title.toLowerCase()}/actions/toggle`; 
@@ -112,6 +116,7 @@ async function turnThingOn(title : string) : Promise<void>{
     }
 }
 
+// Turns a device on if it is currently off.
 async function turnThingOff(title : string) : Promise<void>{
     const isOnUrl = `http://localhost:8081/${title.toLowerCase()}/properties/isOn`;
     const toggleUrl = `http://localhost:8081/${title.toLowerCase()}/actions/toggle`; 
@@ -136,6 +141,7 @@ async function turnThingOff(title : string) : Promise<void>{
     }
 }
 
+// Handles the "maxHumidity" event by turning off all humidifiers in the specified room.
 async function handleMaxHumidityEvent(roomId: string) {
     const devices = roomMapping.get(roomId);
     if (!devices) {
@@ -151,6 +157,7 @@ async function handleMaxHumidityEvent(roomId: string) {
 
 }
 
+// Handles the "maxTemperature" event by turning off all radiators in the specified room.
 async function handleMaxTemperatureEvent(roomId: string) {
     const devices = roomMapping.get(roomId);
     if (!devices) {
@@ -166,6 +173,7 @@ async function handleMaxTemperatureEvent(roomId: string) {
     }
 }
 
+// Handles the "minTemperature" event by turning on all radiators in the specified room.
 async function handleMinTemperatureEvent(roomId: string) {
     const devices = roomMapping.get(roomId);
     if (!devices) {
@@ -181,6 +189,7 @@ async function handleMinTemperatureEvent(roomId: string) {
     }
 }
 
+// Handles the "peopleChanged" event by adjusting devices in the room based on the number of people present.
 async function handlePeopleChangedEvent(roomId: string, data: string) {
     console.log(`[Room ${roomId}] Data: ${data}`);
     const devices = roomMapping.get(roomId);
@@ -242,6 +251,7 @@ async function handlePeopleChangedEvent(roomId: string, data: string) {
     }
 }
 
+// Subscribes to all event endpoints generated from the room mapping.
 export function subscribeToAllEndpoints(map: Map<string, { title: string, type: string }[]>) {
     const endpoints = generateEndpoints(map);
     endpoints.forEach(url => {
