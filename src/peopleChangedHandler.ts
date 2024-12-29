@@ -101,18 +101,14 @@ async function turnThingOn(title : string) : Promise<void>{
         const isOn = response.data;
 
         if (!isOn) {
-            console.log(`[Device ${title}] Acceso. Spegnimento in corso...`);
             await axios.post(toggleUrl, null,{
                 headers: {
                     'Content-Type': 'application/json' 
                 }
             });
-            console.log(`[Device ${title}] Spento con successo.`);
-        } else {
-            console.log(`[Device ${title}] Già spento.`);
-        }
+        } 
     } catch (error) {
-        console.error(`[Device ${title}] Errore nel controllo/spegnimento con URL ${toggleUrl}`, error);
+        console.error(`[Device ${title}] Error turning on the device`, error);
     }
 }
 
@@ -126,18 +122,28 @@ async function turnThingOff(title : string) : Promise<void>{
         const isOn = response.data;
 
         if (isOn) {
-            console.log(`[Device ${title}] Acceso. Spegnimento in corso...`);
             await axios.post(toggleUrl, null,{
                 headers: {
                     'Content-Type': 'application/json' 
                 }
             });
-            console.log(`[Device ${title}] Spento con successo.`);
-        } else {
-            console.log(`[Device ${title}] Già spento.`);
-        }
+        } 
     } catch (error) {
-        console.error(`[Device ${title}] Errore nel controllo/spegnimento con URL ${toggleUrl}`, error);
+        console.error(`[Device ${title}] Error turning off the device`, error);
+    }
+}
+
+// Set intensity level
+async function setIntensity(title: string, intensity : string) {
+    const intensityLevelUrl = `http://localhost:8081/${title.toLowerCase()}/actions/set` + 'intensity';
+    try {
+        await axios.post(intensityLevelUrl, null, {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+    } catch (error) {
+        console.log("Errore handling DimmableLamp: ", error);
     }
 }
 
@@ -145,7 +151,7 @@ async function turnThingOff(title : string) : Promise<void>{
 async function handleMaxHumidityEvent(roomId: string) {
     const devices = roomMapping.get(roomId);
     if (!devices) {
-        console.log(`[Room ${roomId}] Nessun dispositivo trovato.`);
+        console.log(`[Room ${roomId}] No device.`);
         return;
     }
 
@@ -161,7 +167,7 @@ async function handleMaxHumidityEvent(roomId: string) {
 async function handleMaxTemperatureEvent(roomId: string) {
     const devices = roomMapping.get(roomId);
     if (!devices) {
-        console.log(`[Room ${roomId}] Nessun dispositivo trovato.`);
+        console.log(`[Room ${roomId}] No device.`);
         return;
     }
 
@@ -177,7 +183,7 @@ async function handleMaxTemperatureEvent(roomId: string) {
 async function handleMinTemperatureEvent(roomId: string) {
     const devices = roomMapping.get(roomId);
     if (!devices) {
-        console.log(`[Room ${roomId}] Nessun dispositivo trovato.`);
+        console.log(`[Room ${roomId}] No device.`);
         return;
     }
 
@@ -191,11 +197,10 @@ async function handleMinTemperatureEvent(roomId: string) {
 
 // Handles the "peopleChanged" event by adjusting devices in the room based on the number of people present.
 async function handlePeopleChangedEvent(roomId: string, data: string) {
-    console.log(`[Room ${roomId}] Data: ${data}`);
     const devices = roomMapping.get(roomId);
     
     if (!devices) {
-        console.log(`[Room ${roomId}] Nessun dispositivo trovato.`);
+        console.log(`[Room ${roomId}] No device.`);
         return;
     }
 
@@ -211,41 +216,16 @@ async function handlePeopleChangedEvent(roomId: string, data: string) {
             const lamps = devices?.filter(device => device.type === 'DimmableLamp') ?? [];
             for (const lamp of lamps) {
                 const title = lamp.title;
-                const intensityLevelUrl = `http://localhost:8081/${title.toLowerCase()}/actions/setLow`;
-
-                try {
-                    await turnThingOn(title);
-
-                    await axios.post(intensityLevelUrl, null, {
-                        headers: {
-                            'Content-Type': 'application/json'
-                        }
-                    });
-
-                } catch (error) {
-                    console.log("Errore nella gestione delle dimmableLamp: ", error);
-                }
+                await turnThingOn(title);
+                await setIntensity(title, 'Low');
             } 
             break;
         default: 
             const dimmableLamps = devices?.filter(device => device.type === 'DimmableLamp') ?? [];
             for (const lamp of dimmableLamps) {
                 const title = lamp.title;
-                const intensityLevelUrl = `http://localhost:8081/${title.toLowerCase()}/actions/setHigh`;
-
-                try {
-                    await turnThingOn(title);
-
-                    await axios.post(intensityLevelUrl, null, {
-                        headers: {
-                            'Content-Type': 'application/json'
-                        }
-                    });
-
-                } catch (error) {
-                    console.log("Errore nella gestione delle dimmableLamp: ", error);
-                }
-
+                await turnThingOn(title);
+                await setIntensity(title, 'High');
             }
             break;
     }
