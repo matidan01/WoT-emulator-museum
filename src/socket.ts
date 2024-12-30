@@ -1,4 +1,6 @@
 import { io } from 'socket.io-client';
+import { SETUP_URL } from './main';
+import slugify from 'slugify';
 
 export var roomMapping: Map<string, { title: string, type: string }[]>;
 let roomMappingReady: () => void;
@@ -8,7 +10,7 @@ export const roomMappingPromise = new Promise<void>((resolve) => {
 
 // Sets up a Socket.IO listener to receive room and device data from the server.
 export function setupListener(): void {
-    const socket = io('http://localhost:3000');
+    const socket = io(SETUP_URL);
 
     // Listen for the 'setup' event to receive room and device data.
     socket.on('setup', (data: any[]) => {
@@ -38,18 +40,24 @@ function createRoomMapping(data: any[]): Map<string, { title: string, type: stri
 
     data.forEach((item) => {
         if (item.type === 'Room') {
-            roomMapping.set(item.title, []);
+            const slugifiedTitle = slugify(item.title, { lower: true });
+            roomMapping.set(slugifiedTitle, []);
         }
     });
 
     data.forEach((item) => {
         if (item.roomId && item.type !== 'Room') {
-            const roomName = typeof item.roomId === 'string' 
-                ? item.roomId 
-                : data.find(room => room.roomId === item.roomId)?.title;
-            
-            if (roomName && roomMapping.has(roomName)) {
-                roomMapping.get(roomName)?.push({ title: item.title, type: item.type });
+            const originalRoomTitle = data.find(room => room.title === item.roomId)?.title;
+
+            if (originalRoomTitle) {
+                const slugifiedRoomTitle = slugify(originalRoomTitle, { lower: true });
+
+                if (roomMapping.has(slugifiedRoomTitle)) {
+                    roomMapping.get(slugifiedRoomTitle)?.push({
+                        title: slugify(item.title, { lower: true }),
+                        type: item.type,
+                    });
+                }
             }
         }
     });
