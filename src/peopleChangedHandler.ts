@@ -1,14 +1,20 @@
 import axios from 'axios';
 import { roomMapping } from './socket';
+import slugify from "slugify"
+import { BASE_URL } from './main';
+
+
 
 // Generates a list of endpoint URLs based on the room mapping.
 function generateEndpoints(map: Map<string, { title: string, type: string }[]>): string[] {
     const endpoints: string[] = [];
     map.forEach((_, roomId) => {
-        endpoints.push(`http://localhost:8081/${roomId.toLowerCase()}/events/peopleChanged`);
-        endpoints.push(`http://localhost:8081/${roomId.toLowerCase()}/events/maxHumidity`);
-        endpoints.push(`http://localhost:8081/${roomId.toLowerCase()}/events/minTemperature`);
-        endpoints.push(`http://localhost:8081/${roomId.toLowerCase()}/events/maxTemperature`);
+        const id = slugify(roomId, { lower: true });
+        endpoints.push(`${BASE_URL}/${id}/events/peopleChanged`);
+        endpoints.push(`${BASE_URL}/${id}/events/maxHumidity`);
+        endpoints.push(`${BASE_URL}/${id}/events/minHumidity`);
+        endpoints.push(`${BASE_URL}/${id}/events/minTemperature`);
+        endpoints.push(`${BASE_URL}/${id}/events/maxTemperature`);
     });
     return endpoints;
 }
@@ -44,6 +50,11 @@ async function subscribeToEndpoint(url: string) {
                     case "maxHumidity":
                         console.log("Handling 'maxHumidity' event");
                         handleMaxHumidityEvent(roomId);
+                        break;
+                    
+                    case "minHumidity":
+                        console.log("Handling 'maxHumidity' event");
+                        handleMinHumidityEvent(roomId);
                         break;
             
                     case "minTemperature":
@@ -93,8 +104,8 @@ function delay(ms: number) {
 
 // Turns a device off if it is currently on.
 async function turnThingOn(title : string) : Promise<void>{
-    const isOnUrl = `http://localhost:8081/${title.toLowerCase()}/properties/isOn`;
-    const toggleUrl = `http://localhost:8081/${title.toLowerCase()}/actions/toggle`; 
+    const isOnUrl = `${BASE_URL}/${slugify(title, {lower: true})}/properties/isOn`;
+    const toggleUrl = `${BASE_URL}/${slugify(title, {lower: true})}/actions/toggle`; 
 
     try {
         const response = await axios.get(isOnUrl);
@@ -114,8 +125,8 @@ async function turnThingOn(title : string) : Promise<void>{
 
 // Turns a device on if it is currently off.
 async function turnThingOff(title : string) : Promise<void>{
-    const isOnUrl = `http://localhost:8081/${title.toLowerCase()}/properties/isOn`;
-    const toggleUrl = `http://localhost:8081/${title.toLowerCase()}/actions/toggle`; 
+    const isOnUrl = `${BASE_URL}/${slugify(title, {lower: true})}/properties/isOn`;
+    const toggleUrl = `${BASE_URL}/${slugify(title, {lower: true})}/actions/toggle`; 
 
     try {
         const response = await axios.get(isOnUrl);
@@ -135,7 +146,7 @@ async function turnThingOff(title : string) : Promise<void>{
 
 // Set intensity level
 async function setIntensity(title: string, intensity : string) {
-    const intensityLevelUrl = `http://localhost:8081/${title.toLowerCase()}/actions/set` + 'intensity';
+    const intensityLevelUrl = `${BASE_URL}/${slugify(title, {lower: true})}/actions/set` + intensity;
     try {
         await axios.post(intensityLevelUrl, null, {
             headers: {
@@ -145,6 +156,22 @@ async function setIntensity(title: string, intensity : string) {
     } catch (error) {
         console.log("Errore handling DimmableLamp: ", error);
     }
+}
+
+// Handles the "maxHumidity" event by turning off all humidifiers in the specified room.
+async function handleMinHumidityEvent(roomId: string) {
+    const devices = roomMapping.get(roomId);
+    if (!devices) {
+        console.log(`[Room ${roomId}] No device.`);
+        return;
+    }
+
+    const humidifiers = devices?.filter(device => device.type === 'Humidifier') ?? [];
+    for (const humidifier of humidifiers) {
+        const title = humidifier.title;
+        await turnThingOff(title);
+    }
+
 }
 
 // Handles the "maxHumidity" event by turning off all humidifiers in the specified room.
@@ -158,7 +185,7 @@ async function handleMaxHumidityEvent(roomId: string) {
     const humidifiers = devices?.filter(device => device.type === 'Humidifier') ?? [];
     for (const humidifier of humidifiers) {
         const title = humidifier.title;
-        await turnThingOff(title);
+        await turnThingOn(title);
     }
 
 }
