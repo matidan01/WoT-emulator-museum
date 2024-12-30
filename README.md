@@ -24,3 +24,44 @@ npm i
 ```bash
 npx ts-node src/main.ts
 ```
+
+## Event Management
+
+The **WoT-simulator-museum** module automatically handles events related to **temperature** and **humidity**. These events are emitted and processed independently, ensuring the museum environment dynamically adjusts based on changes in these factors.
+
+However, to manage the number of **people** in the different rooms, POST requests are required to trigger the corresponding actions for adding or removing people. These requests must be sent to the following endpoints:
+
+- **Add a person** to the "Gallery of Renaissance Art" room:
+  ```http
+  POST http://localhost:8081/gallery-of-renaissance-art/actions/addPerson
+  ```
+- **Add a person** to the "Modern Art Gallery" room:
+  ```http
+  POST http://localhost:8081/modern-art-gallery/actions/addPerson
+  ```
+- **Add a person** to the "Sculpture Hall" room:
+  ```http
+  POST http://localhost:8081/sculpture-hall/actions/addPerson
+  ```
+- **Add a person** to the "Impressionist Exhibit" room:
+  ```http
+  POST http://localhost:8081/impressionist-exhibit/actions/addPerson
+  ```
+
+
+- **Remove a person** to the "Gallery of Renaissance Art" room:
+   ```http
+  POST http://localhost:8081/gallery-of-renaissance-art/actions/removePerson
+  ```
+- **Remove a person** to the "Modern Art Gallery" room:
+   ```http
+  POST http://localhost:8081/modern-art-gallery/actions/removePerson
+  ```
+- **Remove a person** to the "Sculpture Hall" room:
+   ```http
+  POST http://localhost:8081/sculpture-hall/actions/removePerson
+  ```
+- **Remove a person** to the "Impressionist Exhibit" room:
+   ```http
+  POST http://localhost:8081/impressionist-exhibit/actions/removePerson
+  ```
