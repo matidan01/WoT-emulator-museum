@@ -1,4 +1,4 @@
-import { subscribeToAllEndpoints } from "./peopleChangedHandler";
+import { subscribeToAllEndpoints } from "./eventHandler";
 import { roomMapping, roomMappingPromise, setupListener } from "./socket";
 
 export const BASE_URL = 'http://localhost:8081';
