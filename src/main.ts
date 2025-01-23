@@ -1,17 +1,34 @@
+import { io } from 'socket.io-client';
 import { subscribeToAllEndpoints } from "./eventHandler";
-import { roomMapping, roomMappingPromise, setupListener } from "./socket";
+import { setupListener, roomMappingPromise } from "./roomMapping";
 
 export const BASE_URL = 'http://localhost:8081';
-export const SETUP_URL = 'http://localhost:3000';
+export const SETUP_URL = 'http://localhost:3000/setup';
+export const RUNNING_URL = 'http://localhost:3000/status';
 
-// Start listening for room and device data 
-setupListener();
+const socket = io('http://localhost:3000'); 
+ 
+async function initializeApplication() {
+    console.log("Initializing application...");
+    try {
+        await setupListener(); 
+        await roomMappingPromise; 
+        subscribeToAllEndpoints(); 
+        console.log("Application initialized.");
+    } catch (error) {
+        console.error("Error during application initialization:", error);
+    }
+}
 
-// Wait for the roomMappingPromise to resolve, indicating that the room mapping is ready.
-roomMappingPromise
-    .then(() => {
-        subscribeToAllEndpoints(roomMapping);
-    })
-    .catch((error) => {
-        console.error('Error during room mapping initialization:', error);
-    });
+// Listener per `serverStarted`
+socket.on('serverStarted', async () => {
+    await initializeApplication();
+});
+
+socket.on('connect', () => {
+    console.log("Connected to the server, waiting for 'serverStarted'...");
+});
+
+socket.on('disconnect', () => {
+    console.log("Disconnected from the server.");
+});
