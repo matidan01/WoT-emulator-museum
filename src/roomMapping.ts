@@ -28,8 +28,8 @@ function createRoomMapping(data: any[]): Map<string, { title: string, type: stri
     const roomMapping = new Map<string, { title: string, type: string }[]>();
 
     data.forEach((room : any) => {
-        if (room.type == 'Room' && room.key && typeof room.key === 'string') {
-            roomMapping.set(room.key, []);
+        if (room.type == 'Room' && room.id && typeof room.id === 'string') {
+            roomMapping.set(room.id, []);
             const slugifiedTitle = slugify(room.title, { lower: true });
         } 
     });
