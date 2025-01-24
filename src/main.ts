@@ -1,6 +1,6 @@
 import { io } from 'socket.io-client';
 import { subscribeToAllEndpoints } from "./eventHandler";
-import { setupListener, roomMappingPromise } from "./roomMapping";
+import { setupListener, roomMappingPromise, roomMapping } from "./roomMapping";
 
 export const BASE_URL = 'http://localhost:8081';
 export const SETUP_URL = 'http://localhost:3000/setup';

@@ -4,26 +4,30 @@ import slugify from "slugify"
 import { BASE_URL, RUNNING_URL } from './main';
 import { client } from './client';
 
-// Subscribes to all event endpoints generated from the room mapping.
+// Subscribes to all event endpoints.
 export function subscribeToAllEndpoints() {
     const endpoints: string[] = [];
+
+    // Add endpoints for different events that the system needs to listen to.
     endpoints.push(`${BASE_URL}/peoplesensor/events/peopleChanged`);
     endpoints.push(`${BASE_URL}/museum/events/maxHumidity`);
     endpoints.push(`${BASE_URL}/museum/events/minHumidity`);
     endpoints.push(`${BASE_URL}/museum/events/minTemperature`);
     endpoints.push(`${BASE_URL}/museum/events/maxTemperature`);
     
+    // Subscribe to each endpoint in the list.
     for (const url of endpoints) {
         subscribeToEndpoint(url);
     }
 }
 
+// Subscribes to a specific endpoint and handles events received from it.
 async function subscribeToEndpoint(url: string): Promise<void> {
     try {
         await client.subscribeResource(
             { op: ["subscribeevent"], href: url},
             async (content : any) => {
-                handleEvent(content, url);
+                handleEvent(content, url); // Handle the event when it arrives.
             },
             (error) => {
                 console.error(`Error in subscription to ${url}`);
@@ -35,6 +39,7 @@ async function subscribeToEndpoint(url: string): Promise<void> {
     }
 }
 
+// Handles incoming events based on their type (derived from the URL).
 async function handleEvent(content : any, url : string) {
 
     const eventData = await content.toBuffer(); 
@@ -43,6 +48,7 @@ async function handleEvent(content : any, url : string) {
     
     const eventName = extractEventNameFromURL(url);
 
+    // Route the event to the appropriate handler based on the event name.
     switch (eventName) {
         case "peopleChanged":
             console.log("Handling 'peopleChanged' event");
@@ -75,6 +81,7 @@ async function handleEvent(content : any, url : string) {
     }
 }
 
+// Extracts the event name from the URL by taking the last part of the URL path.
 function extractEventNameFromURL(url: string): string {
     const parts = url.split('/');
     return parts[parts.length - 1];
