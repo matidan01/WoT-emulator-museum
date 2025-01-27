@@ -1,8 +1,6 @@
-import axios from 'axios';
-import { roomMapping } from './roomMapping';
-import slugify from "slugify"
-import { BASE_URL, RUNNING_URL } from './main';
-import { client } from './client';
+import { consumedThingMap, roomMapping, servient } from './roomMapping';
+import { BASE_URL } from './main';
+import { Helpers } from '@node-wot/core';
 
 // Subscribes to all event endpoints.
 export function subscribeToAllEndpoints() {
@@ -24,12 +22,13 @@ export function subscribeToAllEndpoints() {
 // Subscribes to a specific endpoint and handles events received from it.
 async function subscribeToEndpoint(url: string): Promise<void> {
     try {
+        const client = servient.getClientFor(Helpers.extractScheme(url));
         await client.subscribeResource(
             { op: ["subscribeevent"], href: url},
             async (content : any) => {
                 handleEvent(content, url); // Handle the event when it arrives.
             },
-            (error) => {
+            () => {
                 console.error(`Error in subscription to ${url}`);
             },
             () => console.warn(`Subscription to ${url} completed.`)
@@ -89,32 +88,30 @@ function extractEventNameFromURL(url: string): string {
 
 // Turns a device off if it is currently on.
 async function turnThingOn(title : string) : Promise<void>{
-    const isOnUrl = `${BASE_URL}/${slugify(title, {lower: true})}/properties/isOn`;
-    const toggleUrl = `${BASE_URL}/${slugify(title, {lower: true})}/actions/toggle`; 
-
     try {
-        const response = await client.readResource({ href: isOnUrl });
-        const isOn = (await response.toBuffer()).toString();
-       
-        if (isOn === 'false') {
-            await client.invokeResource({ href: toggleUrl });
-        } 
+        const consumedThing = consumedThingMap.get(title)
+        const response = await consumedThing?.readProperty('isOn');
+        if (response) {
+            const isOn = (await response.value())?.toString();
+            if (isOn === 'false') {
+                consumedThing?.invokeAction('toggle');
+            }
+        }  
     } catch (error) {
         console.error(`[Device ${title}] Error turning on the device`, error);
     }
 }
 
 // Turns a device on if it is currently off.
-async function turnThingOff(title : string) : Promise<void>{
-    const isOnUrl = `${BASE_URL}/${slugify(title, {lower: true})}/properties/isOn`;
-    const toggleUrl = `${BASE_URL}/${slugify(title, {lower: true})}/actions/toggle`; 
-
+async function turnThingOff(title : string) : Promise<void>{ 
     try {
-        const response = await client.readResource({ href: isOnUrl });
-        const isOn = (await response.toBuffer()).toString();
-
-        if (isOn == 'true') {
-            await client.invokeResource({ href: toggleUrl });
+        const consumedThing = consumedThingMap.get(title)
+        const response = await consumedThing?.readProperty('isOn');
+        if (response) {
+            const isOn = (await response.value())?.toString();
+            if (isOn === 'true') {
+                consumedThing?.invokeAction('toggle');
+            }
         } 
     } catch (error) {
         console.error(`[Device ${title}] Error turning off the device`, error);
@@ -123,9 +120,9 @@ async function turnThingOff(title : string) : Promise<void>{
 
 // Set intensity level
 async function setIntensity(title: string, intensity : string) {
-    const intensityLevelUrl = `${BASE_URL}/${slugify(title, {lower: true})}/actions/set` + intensity;
     try {
-        await client.invokeResource({ href: intensityLevelUrl });
+        const consumedThing = consumedThingMap.get(title)
+        consumedThing?.invokeAction('set'+intensity);
     } catch (error) {
         console.log("Error handling setIntensity");
     }
