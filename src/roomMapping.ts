@@ -35,14 +35,16 @@ function createRoomMapping(data: any[]): Map<string, { title: string, type: stri
     servient.start().then(async (WoT) => {
         for (const things of data) {
             try {
-                const title = slugify(things.title, {lower: true})
-                const td = await WoT.requestThingDescription(BASE_URL + "/" + title);
-                let thing = await WoT.consume(td);
-                if (thing !== undefined) {
-                    consumedThingMap.set(title, thing);
+                if (things.type !== 'Room') {
+                    const title = slugify(things.title, {lower: true})
+                    const td = await WoT.requestThingDescription(BASE_URL + "/" + title);
+                    let thing = await WoT.consume(td);
+                    if (thing !== undefined) {
+                        consumedThingMap.set(title, thing);
+                    }
                 }
             } catch (err) {
-                console.error(`Error processing thing ${things.title}:`, err);
+                console.error(`Error processing thing ${things.title}`);
             }
         }
     }).catch((err) => { console.error(err); });
