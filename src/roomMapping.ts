@@ -30,45 +30,43 @@ export async function setupListener(): Promise<void> {
 }
 
 function createRoomMapping(data: any[]): Map<string, { title: string, type: string }[]> {
-    const roomMapping = new Map<string, { title: string, type: string }[]>();
+    const newRoomMapping = new Map<string, { title: string, type: string }[]>();
 
     servient.start().then(async (WoT) => {
         for (const things of data) {
             try {
-                if (things.type !== 'Room') {
-                    const title = slugify(things.title, {lower: true})
-                    const td = await WoT.requestThingDescription(BASE_URL + "/" + title);
-                    let thing = await WoT.consume(td);
-                    if (thing !== undefined) {
-                        consumedThingMap.set(title, thing);
-                    }
+                const title = slugify(things.title, {lower: true});
+                const td = await WoT.requestThingDescription(BASE_URL + "/" + title);
+                let thing = await WoT.consume(td);
+                if (thing !== undefined) {
+                    consumedThingMap.set(title, thing);
                 }
             } catch (err) {
                 console.error(`Error processing thing ${things.title}`);
             }
         }
     }).catch((err) => { console.error(err); });
-    
-    
 
-    data.forEach((room : any) => {
-        if (room.type == 'Room' && room.id && typeof room.id === 'string') {
-            roomMapping.set(room.id, []);
-        } 
+    data.forEach((item) => {
+        if (item.title.toString() == "Museum") {
+            for (const room of item.rooms) {
+                newRoomMapping.set(room.id, []);
+            }
+        }
     });
 
     data.forEach((item) => {
         if (item.roomId && item.type !== 'Room' && typeof item.roomId === 'string') {
             const slugifiedRoomTitle = slugify(item.roomId, { lower: true });
-            if (roomMapping.has(slugifiedRoomTitle)) {
+            if (newRoomMapping.has(slugifiedRoomTitle)) {
                 const title = typeof item.title === 'string' ? slugify(item.title, { lower: true }) : 'unknown';
-                roomMapping.get(slugifiedRoomTitle)?.push({
+                newRoomMapping.get(slugifiedRoomTitle)?.push({
                     title,
                     type: item.type,
                 });
             }
         } 
     });
-
-    return roomMapping; 
+    console.log(newRoomMapping);
+    return newRoomMapping; 
 }
