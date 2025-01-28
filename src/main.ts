@@ -5,6 +5,7 @@ import { setupListener, roomMappingPromise, roomMapping } from "./roomMapping";
 export const BASE_URL = 'http://localhost:8081';
 export const SETUP_URL = 'http://localhost:3000/setup';
 export const RUNNING_URL = 'http://localhost:3000/status';
+export const ENDOPOINTS_URL = 'http://localhost:3000/getThings'
 
 const socket = io('http://localhost:3000'); 
  

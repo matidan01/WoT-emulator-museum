@@ -1,21 +1,22 @@
 import { consumedThingMap, roomMapping, servient } from './roomMapping';
-import { BASE_URL } from './main';
+import { ENDOPOINTS_URL } from './main';
 import { Helpers } from '@node-wot/core';
 
 // Subscribes to all event endpoints.
-export function subscribeToAllEndpoints() {
-    const endpoints: string[] = [];
+export async function subscribeToAllEndpoints() {
 
     // Add endpoints for different events that the system needs to listen to.
-    endpoints.push(`${BASE_URL}/peoplesensor/events/peopleChanged`);
-    endpoints.push(`${BASE_URL}/museum/events/maxHumidity`);
-    endpoints.push(`${BASE_URL}/museum/events/minHumidity`);
-    endpoints.push(`${BASE_URL}/museum/events/minTemperature`);
-    endpoints.push(`${BASE_URL}/museum/events/maxTemperature`);
-    
+    const client = servient.getClientFor(Helpers.extractScheme(ENDOPOINTS_URL));
+    const getContent = await client.readResource({ href: ENDOPOINTS_URL });
+    const things = JSON.parse((await getContent.toBuffer()).toString());
+
     // Subscribe to each endpoint in the list.
-    for (const url of endpoints) {
-        subscribeToEndpoint(url);
+    for (const thing of things) {
+        const getTD = await client.readResource({ href: thing.URI });
+        const td = JSON.parse((await getTD.toBuffer()).toString());
+        for (const event in td.events) {
+            subscribeToEndpoint(thing.URI + '/events/' + event);
+        }
     }
 }
 
