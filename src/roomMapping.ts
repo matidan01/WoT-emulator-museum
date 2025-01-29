@@ -1,10 +1,12 @@
-import { BASE_URL, SETUP_URL } from './main';
+import { ENDOPOINTS_URL, SETUP_URL } from './main';
 import slugify from 'slugify';
-import Servient, { Helpers } from '@node-wot/core';
+import Servient, { Helpers, ProtocolClient } from '@node-wot/core';
 import HttpClientFactory from '@node-wot/binding-http/dist/http-client-factory';
 
-export let roomMapping: Map<string, { title: string, type: string }[]>;
+export let roomMapping: Map<string, { title: string, type: string | unknown}[]>;
 export let consumedThingMap : Map<string, WoT.ConsumedThing> = new Map();
+export let URIdata : any[] = [];
+export let client : ProtocolClient;
 
 // Promise to signal when room mapping is ready
 let roomMappingReady: () => void;
@@ -22,11 +24,11 @@ export async function setupListener(): Promise<void> {
 
     try {  
         // Create an HTTP client and fetch data from the server
-        const client = servient.getClientFor(Helpers.extractScheme(form.href));
+        client = servient.getClientFor(Helpers.extractScheme(form.href));
         const response = await client.readResource(form);
         const body = await response.toBuffer();
 
-        roomMapping = createRoomMapping(JSON.parse(body.toString("ascii")) as any);
+        roomMapping = await createRoomMapping(JSON.parse(body.toString("ascii")) as any);
         roomMappingReady();
     } catch (error) {
         console.error("Error while setting up listener:", error);
@@ -34,51 +36,53 @@ export async function setupListener(): Promise<void> {
 }
 
 // Function to create a room mapping from received data
-function createRoomMapping(data: any[]): Map<string, { title: string, type: string }[]> {
-    const newRoomMapping = new Map<string, { title: string, type: string }[]>();
+async function createRoomMapping(data: any[]): Promise<Map<string, { title: string, type: string | unknown }[]>> {
+    const newRoomMapping = new Map<string, { title: string, type: string | unknown }[]>();
 
-    // Start the WoT Servient and process each device in the data
-    servient.start().then(async (WoT) => {
-        for (const things of data) {
+    try {
+        const WoT = await servient.start();
+
+        const getContent = await client.readResource({ href: ENDOPOINTS_URL });
+        URIdata = JSON.parse((await getContent.toBuffer()).toString());
+
+        for (const things of URIdata) {
             try {
+                const title = slugify(things.title, { lower: true });
+                const td = await WoT.requestThingDescription(things.URI);
+                const thing = await WoT.consume(td);
 
-                // Generate a slugified title and request its Thing Description (TD)
-                const title = slugify(things.title, {lower: true});
-                const td = await WoT.requestThingDescription(BASE_URL + "/" + title);
-                let thing = await WoT.consume(td);
-                
-                // Store the consumed thing in the map if it exists
                 if (thing !== undefined) {
                     consumedThingMap.set(title, thing);
                 }
             } catch (err) {
-                console.error(`Error processing thing ${things.title}`);
+                console.error(`Error processing thing ${things.title}:`, err);
             }
         }
-    }).catch((err) => { console.error(err); });
 
-     // Initialize mapping for Museum rooms
-    data.forEach((item) => {
-        if (item.title.toString() == "Museum") {
-            for (const room of item.rooms) {
-                newRoomMapping.set(room.id, []);
+        data.forEach((item) => {
+            if (item.title.toString() === "Museum") {
+                for (const room of item.rooms) {
+                    newRoomMapping.set(room.id, []);
+                }
             }
-        }
-    });
+        });
 
-     // Populate room mappings with devices
-    data.forEach((item) => {
-        if (item.roomId && item.type !== 'Room' && typeof item.roomId === 'string') {
-            const slugifiedRoomTitle = slugify(item.roomId, { lower: true });
-            if (newRoomMapping.has(slugifiedRoomTitle)) {
-                const title = typeof item.title === 'string' ? slugify(item.title, { lower: true }) : 'unknown';
-                newRoomMapping.get(slugifiedRoomTitle)?.push({
-                    title,
-                    type: item.type,
-                });
+        URIdata.forEach((thing) => {
+            if (thing.roomId && thing.type !== 'Room' && typeof thing.roomId === 'string') {
+                const slugifiedRoomTitle = slugify(thing.roomId, { lower: true });
+                if (newRoomMapping.has(slugifiedRoomTitle)) {
+                    const title = typeof thing.title === 'string' ? slugify(thing.title, { lower: true }) : 'unknown';
+                    newRoomMapping.get(slugifiedRoomTitle)?.push({
+                        title,
+                        type: thing.type,
+                    });
+                }
             }
-        } 
-    });
+        });
 
-    return newRoomMapping; 
+    } catch (err) {
+        console.error("Error in createRoomMapping:", err);
+    }
+
+    return newRoomMapping;
 }

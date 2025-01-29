@@ -3,7 +3,6 @@ import { subscribeToAllEndpoints } from "./eventHandler";
 import { setupListener, roomMappingPromise, roomMapping } from "./roomMapping";
 
 // Define API endpoint URLs
-export const BASE_URL = 'http://localhost:8081';
 export const SETUP_URL = 'http://localhost:3000/setup';
 export const ENDOPOINTS_URL = 'http://localhost:3000/getThings'
 
@@ -16,7 +15,7 @@ async function initializeApplication() {
     try {
         await setupListener(); // Set up event listeners for devices
         await roomMappingPromise; // Ensure room mapping data is loaded
-        subscribeToAllEndpoints(); // Subscribe to all device event endpoints
+        await subscribeToAllEndpoints(); // Subscribe to all device event endpoints
         console.log("Application initialized.");
     } catch (error) {
         console.error("Error during application initialization:", error);
