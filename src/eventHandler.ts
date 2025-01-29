@@ -1,21 +1,30 @@
-import { consumedThingMap, roomMapping, servient } from './roomMapping';
-import { ENDOPOINTS_URL } from './main';
+import { client, consumedThingMap, roomMapping, servient, URIdata } from './roomMapping';
 import { Helpers } from '@node-wot/core';
 
-// Subscribes to all event endpoints.
 export async function subscribeToAllEndpoints() {
-    const client = servient.getClientFor(Helpers.extractScheme(ENDOPOINTS_URL));
-    const getContent = await client.readResource({ href: ENDOPOINTS_URL });
-    const things = JSON.parse((await getContent.toBuffer()).toString());
+    try {
+        const endpoints = await getAllEndpoints();
+        const promises = endpoints.map(url => subscribeToEndpoint(url));
+         
+        await Promise.all(promises);  
+    } catch (error) {
+        console.error("Error during subscribing:", error);
+    }
+}
 
-    // Iterate over each event and subscribe to it
-    for (const thing of things) {
+// Get an array of things event's endpoints
+async function getAllEndpoints(): Promise<string[]> {
+    const endpoints: string[] = [];
+    const readPromises = URIdata.map(async (thing) => {
         const getTD = await client.readResource({ href: thing.URI });
         const td = JSON.parse((await getTD.toBuffer()).toString());
         for (const event in td.events) {
-            subscribeToEndpoint(thing.URI + '/events/' + event);
+            endpoints.push(thing.URI + '/events/' + event);
         }
-    }
+    });
+
+    await Promise.all(readPromises);
+    return endpoints;
 }
 
 // Subscribes to a specific endpoint and handles events received from it.
