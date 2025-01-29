@@ -4,13 +4,11 @@ import { Helpers } from '@node-wot/core';
 
 // Subscribes to all event endpoints.
 export async function subscribeToAllEndpoints() {
-
-    // Add endpoints for different events that the system needs to listen to.
     const client = servient.getClientFor(Helpers.extractScheme(ENDOPOINTS_URL));
     const getContent = await client.readResource({ href: ENDOPOINTS_URL });
     const things = JSON.parse((await getContent.toBuffer()).toString());
 
-    // Subscribe to each endpoint in the list.
+    // Iterate over each event and subscribe to it
     for (const thing of things) {
         const getTD = await client.readResource({ href: thing.URI });
         const td = JSON.parse((await getTD.toBuffer()).toString());
@@ -87,7 +85,7 @@ function extractEventNameFromURL(url: string): string {
     return parts[parts.length - 1];
 }
 
-// Turns a device off if it is currently on.
+// Turns a device on if it is currently off.
 async function turnThingOn(title : string) : Promise<void>{
     try {
         const consumedThing = consumedThingMap.get(title)
@@ -103,7 +101,7 @@ async function turnThingOn(title : string) : Promise<void>{
     }
 }
 
-// Turns a device on if it is currently off.
+// Turns a device off if it is currently on.
 async function turnThingOff(title : string) : Promise<void>{ 
     try {
         const consumedThing = consumedThingMap.get(title)
@@ -129,7 +127,7 @@ async function setIntensity(title: string, intensity : string) {
     }
 }
 
-// Handles the "maxHumidity" event by turning off all humidifiers in the specified room.
+// Handles the "minHumidity" event by turning on all humidifiers in the specified room.
 async function handleMinHumidityEvent(rooms: string[]) {
     for (const roomId of rooms) {
         const devices = roomMapping.get(roomId);
