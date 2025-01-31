@@ -67,14 +67,14 @@ async function createRoomMapping(data: any[]): Promise<Map<string, { title: stri
             }
         });
 
-        URIdata.forEach((thing) => {
-            if (thing.roomId && thing.type !== 'Room' && typeof thing.roomId === 'string') {
-                const slugifiedRoomTitle = slugify(thing.roomId, { lower: true });
+        data.forEach((item) => {
+            if (item.roomId && item.type !== 'Room' && typeof item.roomId === 'string') {
+                const slugifiedRoomTitle = slugify(item.roomId, { lower: true });
                 if (newRoomMapping.has(slugifiedRoomTitle)) {
-                    const title = typeof thing.title === 'string' ? slugify(thing.title, { lower: true }) : 'unknown';
+                    const title = typeof item.title === 'string' ? slugify(item.title, { lower: true }) : 'unknown';
                     newRoomMapping.get(slugifiedRoomTitle)?.push({
                         title,
-                        type: thing.type,
+                        type: item.type,
                     });
                 }
             }

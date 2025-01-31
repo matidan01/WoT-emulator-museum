@@ -4,7 +4,7 @@ import { setupListener, roomMappingPromise, roomMapping } from "./roomMapping";
 
 // Define API endpoint URLs
 export const SETUP_URL = 'http://localhost:3000/setup';
-export const ENDOPOINTS_URL = 'http://localhost:3000/getThings'
+export const ENDOPOINTS_URL = 'http://localhost:3000/things'
 
 // Initialize a WebSocket connection to the server
 const socket = io('http://localhost:3000'); 
